@@ -1,13 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { PopulatedPart, PartStatus, Machine } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { AlertCircle, CheckCircle2, Activity, Zap, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Activity, Zap, RefreshCw, Download, Upload } from 'lucide-react';
 
 interface DashboardProps {
   parts: PopulatedPart[];
   machines: Machine[];
   onGenerateReport: () => void;
   isGeneratingReport: boolean;
+  onExport: () => void;
+  onImport: (file: File) => void;
 }
 
 const COLORS = {
@@ -16,7 +18,16 @@ const COLORS = {
   [PartStatus.CRITICAL]: '#f43f5e',
 };
 
-export const Dashboard: React.FC<DashboardProps> = ({ parts, machines, onGenerateReport, isGeneratingReport }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ 
+  parts, 
+  machines, 
+  onGenerateReport, 
+  isGeneratingReport,
+  onExport,
+  onImport
+}) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const stats = useMemo(() => {
     const critical = parts.filter(p => p.status === PartStatus.CRITICAL).length;
     const warning = parts.filter(p => p.status === PartStatus.WARNING).length;
@@ -41,26 +52,59 @@ export const Dashboard: React.FC<DashboardProps> = ({ parts, machines, onGenerat
     return Object.values(data);
   }, [parts]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onImport(file);
+    }
+    // Reset value so same file can be selected again if needed
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
            <h2 className="text-2xl font-bold text-slate-800">System Dashboard</h2>
            <p className="text-slate-500">Real-time overview of fleet health.</p>
         </div>
-        <button 
-          onClick={onGenerateReport}
-          disabled={isGeneratingReport}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-all shadow-md
-            ${isGeneratingReport ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg active:scale-95'}`}
-        >
-          {isGeneratingReport ? (
-            <RefreshCw className="w-5 h-5 animate-spin" />
-          ) : (
-            <Zap className="w-5 h-5" />
-          )}
-          {isGeneratingReport ? 'Analyzing...' : 'AI Health Analysis'}
-        </button>
+        <div className="flex items-center gap-2">
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept=".json" 
+              onChange={handleFileChange}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium shadow-sm"
+            >
+              <Upload className="w-4 h-4" /> Import Data
+            </button>
+            <button
+              onClick={onExport}
+              className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium shadow-sm"
+            >
+              <Download className="w-4 h-4" /> Backup Data
+            </button>
+            <div className="w-px h-8 bg-slate-300 mx-1"></div>
+            <button 
+            onClick={onGenerateReport}
+            disabled={isGeneratingReport}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-all shadow-md
+                ${isGeneratingReport ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg active:scale-95'}`}
+            >
+            {isGeneratingReport ? (
+                <RefreshCw className="w-5 h-5 animate-spin" />
+            ) : (
+                <Zap className="w-5 h-5" />
+            )}
+            {isGeneratingReport ? 'Analyzing...' : 'AI Health Analysis'}
+            </button>
+        </div>
       </div>
 
       {/* KPI Cards */}

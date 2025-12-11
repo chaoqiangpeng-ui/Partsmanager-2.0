@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { MachineView } from './components/MachineView';
@@ -12,14 +12,28 @@ import { Sparkles } from 'lucide-react';
 // Define styles for generated HTML content from AI
 const PROSE_STYLES = "prose prose-sm prose-slate max-w-none prose-h3:text-lg prose-h3:font-bold prose-ul:list-disc prose-li:ml-4";
 
+// Helper hook for LocalStorage
+function useStickyState<T>(defaultValue: T, key: string): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const [value, setValue] = useState<T>(() => {
+    const stickyValue = window.localStorage.getItem(key);
+    return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+
+  return [value, setValue];
+}
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'machines' | 'parts'>('dashboard');
   
-  // App State
-  const [machines, setMachines] = useState<Machine[]>(MOCK_MACHINES);
-  const [partDefinitions, setPartDefinitions] = useState<PartDefinition[]>(MOCK_PART_DEFINITIONS);
-  const [installedParts, setInstalledParts] = useState<InstalledPart[]>(INITIAL_INSTALLED_PARTS);
-  const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([]);
+  // App State with Persistence
+  const [machines, setMachines] = useStickyState<Machine[]>(MOCK_MACHINES, 'lcp_machines');
+  const [partDefinitions, setPartDefinitions] = useStickyState<PartDefinition[]>(MOCK_PART_DEFINITIONS, 'lcp_definitions');
+  const [installedParts, setInstalledParts] = useStickyState<InstalledPart[]>(INITIAL_INSTALLED_PARTS, 'lcp_installed_parts');
+  const [maintenanceLogs, setMaintenanceLogs] = useStickyState<MaintenanceLog[]>([], 'lcp_logs');
   
   // AI State
   const [aiReport, setAiReport] = useState<string | null>(null);
@@ -31,7 +45,7 @@ const App: React.FC = () => {
       const def = partDefinitions.find(d => d.id === part.definitionId);
       const mach = machines.find(m => m.id === part.machineId);
       
-      // Filter out parts if def or machine was deleted (though delete isn't implemented yet)
+      // Filter out parts if def or machine was deleted
       if (!def || !mach) return null;
 
       // Calculate health (Inverse of usage percentage)
@@ -51,6 +65,51 @@ const App: React.FC = () => {
       };
     }).filter((p): p is PopulatedPart => p !== null);
   }, [installedParts, machines, partDefinitions]);
+
+  // Data Management Actions
+  const handleExportData = () => {
+    const data = {
+      machines,
+      partDefinitions,
+      installedParts,
+      maintenanceLogs,
+      timestamp: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `lifecycle_pro_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportData = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const data = JSON.parse(content);
+        
+        if (data.machines && data.partDefinitions && data.installedParts) {
+          if (window.confirm('This will overwrite your current data. Are you sure?')) {
+            setMachines(data.machines);
+            setPartDefinitions(data.partDefinitions);
+            setInstalledParts(data.installedParts);
+            setMaintenanceLogs(data.maintenanceLogs || []);
+            alert('Data imported successfully!');
+          }
+        } else {
+          alert('Invalid backup file format.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to parse the file.');
+      }
+    };
+    reader.readAsText(file);
+  };
 
   // Actions
   const handleReplacePart = (partId: string, newPartNumber: string) => {
@@ -143,6 +202,8 @@ const App: React.FC = () => {
             machines={machines} 
             onGenerateReport={handleGenerateReport}
             isGeneratingReport={isGeneratingReport}
+            onExport={handleExportData}
+            onImport={handleImportData}
           />
         )}
         {activeTab === 'machines' && (
