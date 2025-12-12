@@ -1,4 +1,4 @@
-import { supabase } from '../src/supabaseClient';
+import { supabase } from './supabaseClient';
 import { Machine, PartDefinition, InstalledPart, MaintenanceLog } from '../types';
 import { MOCK_MACHINES, MOCK_PART_DEFINITIONS, INITIAL_INSTALLED_PARTS } from '../constants';
 
