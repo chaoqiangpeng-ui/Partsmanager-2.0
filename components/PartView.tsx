@@ -11,7 +11,7 @@ import { RefreshCw, Package, Plus, Pencil } from 'lucide-react';
 interface PartViewProps {
   definitions: PartDefinition[];
   parts: PopulatedPart[];
-  onReplacePart: (partId: string, newPartNumber: string) => void;
+  onReplacePart: (partId: string, newPartNumber: string, replaceDate?: string) => void;
   onUpdatePart: (partId: string, updates: Partial<InstalledPart>) => void;
   onAddDefinition: (def: Omit<PartDefinition, 'id'>) => void;
   onEditDefinition: (def: PartDefinition) => void;
@@ -70,8 +70,8 @@ export const PartView: React.FC<PartViewProps> = ({
     setReplaceModalOpen(true);
   }
 
-  const handleReplaceSubmit = (partId: string, newPartNumber: string) => {
-    onReplacePart(partId, newPartNumber);
+  const handleReplaceSubmit = (partId: string, newPartNumber: string, replaceDate?: string) => {
+    onReplacePart(partId, newPartNumber, replaceDate);
     setReplaceModalOpen(false);
   };
 

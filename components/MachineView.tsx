@@ -7,14 +7,14 @@ import { MachineForm } from './forms/MachineForm';
 import { EditPartForm } from './forms/EditPartForm';
 import { ReplacePartForm } from './forms/ReplacePartForm';
 import { HistoryLog } from './HistoryLog';
-import { RefreshCw, AlertTriangle, CheckCircle, Smartphone, Plus, Settings2, Wrench, Pencil, History, ClipboardList } from 'lucide-react';
+import { RefreshCw, AlertTriangle, CheckCircle, Smartphone, Plus, Settings2, Wrench, Pencil, History, CalendarClock } from 'lucide-react';
 
 interface MachineViewProps {
   machines: Machine[];
   parts: PopulatedPart[];
   partDefinitions: PartDefinition[];
   maintenanceLogs: MaintenanceLog[];
-  onReplacePart: (partId: string, newPartNumber: string) => void;
+  onReplacePart: (partId: string, newPartNumber: string, replaceDate?: string) => void;
   onUpdatePart: (partId: string, updates: Partial<InstalledPart>) => void;
   onAddMachine: (machine: Omit<Machine, 'id'>) => void;
   onEditMachine: (machine: Machine) => void;
@@ -108,8 +108,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
     setReplaceModalOpen(true);
   }
 
-  const handleReplaceSubmit = (partId: string, newPartNumber: string) => {
-    onReplacePart(partId, newPartNumber);
+  const handleReplaceSubmit = (partId: string, newPartNumber: string, replaceDate?: string) => {
+    onReplacePart(partId, newPartNumber, replaceDate);
     setReplaceModalOpen(false);
   };
 
@@ -210,13 +210,19 @@ export const MachineView: React.FC<MachineViewProps> = ({
                           <th className="px-4 py-3">Part Name</th>
                           <th className="px-4 py-3">Serial No.</th>
                           <th className="px-4 py-3">Install Date</th>
+                          <th className="px-4 py-3">Est. Replacement</th>
                           <th className="px-4 py-3">Lifetime Used</th>
                           <th className="px-4 py-3">Health</th>
                           <th className="px-4 py-3 text-right">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {machineParts.map(part => (
+                        {machineParts.map(part => {
+                          const installTime = new Date(part.installDate).getTime();
+                          const maxLifeMs = part.definition.maxLifetimeDays * 24 * 60 * 60 * 1000;
+                          const estEndDate = new Date(installTime + maxLifeMs);
+                          
+                          return (
                           <tr key={part.id} className="hover:bg-slate-50 group">
                             <td className="px-4 py-3 font-medium text-slate-800">
                               {part.definition.name}
@@ -236,8 +242,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
                                   <Pencil className="w-3 h-3" />
                                 </button>
                               </div>
-                              <div className="text-xs text-slate-400">
-                                {Math.floor((new Date().getTime() - new Date(part.installDate).getTime()) / (1000 * 3600 * 24))} days ago
+                            </td>
+                             <td className="px-4 py-3">
+                              <div className="flex items-center gap-1.5 text-slate-500">
+                                <CalendarClock className="w-3.5 h-3.5 text-slate-400" />
+                                <span>{estEndDate.toLocaleDateString()}</span>
                               </div>
                             </td>
                             <td className="px-4 py-3">
@@ -259,10 +268,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
                               </button>
                             </td>
                           </tr>
-                        ))}
+                        );
+                        })}
                         {machineParts.length === 0 && (
                           <tr>
-                            <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                            <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
                               No parts recorded for this machine.
                             </td>
                           </tr>

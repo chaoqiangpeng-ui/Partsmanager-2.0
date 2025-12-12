@@ -9,8 +9,19 @@ interface EditPartFormProps {
 }
 
 export const EditPartForm: React.FC<EditPartFormProps> = ({ part, partName, onSubmit, onCancel }) => {
-  // Convert ISO string to YYYY-MM-DD for date input
-  const initialDate = part.installDate ? new Date(part.installDate).toISOString().split('T')[0] : '';
+  // Safe date parsing helper
+  const getInitialDate = (dateStr: string) => {
+    try {
+      if (!dateStr) return new Date().toISOString().split('T')[0];
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return new Date().toISOString().split('T')[0];
+      return d.toISOString().split('T')[0];
+    } catch (e) {
+      return new Date().toISOString().split('T')[0];
+    }
+  };
+
+  const initialDate = getInitialDate(part.installDate);
   
   const [installDate, setInstallDate] = useState(initialDate);
   const [daysUsed, setDaysUsed] = useState(part.currentDaysUsed);
@@ -22,18 +33,16 @@ export const EditPartForm: React.FC<EditPartFormProps> = ({ part, partName, onSu
 
     if (autoSync && newDate) {
       // Create date at midnight local time to avoid timezone offsets issues with simple date inputs
-      const dateObj = new Date(newDate);
-      
       const now = new Date();
       const start = new Date(newDate);
       
-      // Calculate difference in milliseconds
-      const diffMs = now.getTime() - start.getTime();
-      
-      // Convert to days
-      const estimatedDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-      
-      setDaysUsed(estimatedDays);
+      if (!isNaN(start.getTime())) {
+          // Calculate difference in milliseconds
+          const diffMs = now.getTime() - start.getTime();
+          // Convert to days
+          const estimatedDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+          setDaysUsed(estimatedDays);
+      }
     }
   };
 
@@ -43,13 +52,17 @@ export const EditPartForm: React.FC<EditPartFormProps> = ({ part, partName, onSu
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Create a new date object from the input string
-    const newDateIso = new Date(installDate).toISOString();
-    
-    onSubmit(part.id, {
-      installDate: newDateIso,
-      currentDaysUsed: daysUsed
-    });
+    try {
+        // Create a new date object from the input string
+        const newDateIso = new Date(installDate).toISOString();
+        
+        onSubmit(part.id, {
+          installDate: newDateIso,
+          currentDaysUsed: daysUsed
+        });
+    } catch (e) {
+        console.error("Invalid date submitted");
+    }
   };
 
   return (
