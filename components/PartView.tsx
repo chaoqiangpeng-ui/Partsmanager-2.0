@@ -163,10 +163,11 @@ export const PartView: React.FC<PartViewProps> = ({
                          </div>
                          <button 
                             onClick={() => openReplaceModal(inst)}
-                            className="p-2 bg-white hover:bg-blue-50 border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-all shadow-sm group-hover/item:opacity-100 opacity-60"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-blue-50 border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-all shadow-sm group-hover/item:opacity-100 opacity-80 text-xs font-semibold"
                             title="Replace Part"
                           >
-                            <RefreshCw className="w-4 h-4" />
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            Replace
                           </button>
                       </div>
                     </li>
