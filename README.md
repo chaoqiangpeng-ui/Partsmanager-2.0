@@ -1,20 +1,75 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# LifeCycle Pro - Industrial Parts Management System
 
-# Run and deploy your AI Studio app
+![Project Banner](https://via.placeholder.com/1200x300/0f172a/ffffff?text=LifeCycle+Pro+Dashboard)
 
-This contains everything you need to run your app locally.
+**LifeCycle Pro** is a comprehensive industrial parts management system designed to track component lifetimes, installation dates, and maintenance schedules with AI-powered insights.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1dRGArfAmQDNducKKletxe37oXZXcihu4
+Built with **React 19**, **TypeScript**, **Vite**, and **Tailwind CSS**.
 
-## Run Locally
+## ✨ Features
 
-**Prerequisites:**  Node.js
+- **📊 Interactive Dashboard**: Real-time overview of fleet health, KPI cards, and visual charts.
+- **🤖 AI Analysis**: Integrated Gemini AI to analyze fleet data and generate maintenance reports.
+- **🏭 Machine Management**: Track equipment location, model, and status (Active/Maintenance/Offline).
+- **🔧 Parts Inventory**: detailed catalog of component types with lifetime tracking and cost analysis.
+- **⚡ Real-time Health Tracking**: Visual progress bars showing component degradation based on installation dates.
+- **📝 Maintenance History**: Full log of part replacements and maintenance actions.
 
+## 📸 Screenshots
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+> *Add your screenshots here to let visitors preview the app without running it.*
+
+### Dashboard Overview
+![Dashboard](https://via.placeholder.com/800x450/f1f5f9/94a3b8?text=Dashboard+Screenshot)
+
+### Machine Management
+![Machine View](https://via.placeholder.com/800x450/f1f5f9/94a3b8?text=Machine+List+Screenshot)
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/lifecycle-pro.git
+   cd lifecycle-pro
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up Environment Variables**
+   Create a `.env` file in the root directory and add your Google Gemini API Key:
+   ```env
+   API_KEY=your_google_gemini_api_key
+   VITE_SUPABASE_URL=your_supabase_url (Optional)
+   VITE_SUPABASE_KEY=your_supabase_key (Optional)
+   ```
+
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 19, TypeScript, Vite
+- **Styling**: Tailwind CSS, Lucide React (Icons)
+- **Charts**: Recharts
+- **AI Integration**: Google GenAI SDK
+- **Data Persistence**: Supabase (Optional/Mock Mode available)
+
+## 👤 Author
+
+**Chaoqiang**
+- Admin Access
+- Version: v1.3
+
+---
+*LifeCycle Pro v1.3*
