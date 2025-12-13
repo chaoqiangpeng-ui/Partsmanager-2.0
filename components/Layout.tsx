@@ -47,9 +47,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
 
         <div className="p-4 border-t border-slate-800">
           <div className="flex items-center gap-3 px-4 py-2">
-            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">OP</div>
+            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">CQ</div>
             <div className="text-sm">
-              <p className="font-medium text-slate-200">Operator</p>
+              <p className="font-medium text-slate-200">Chaoqiang</p>
               <p className="text-slate-500 text-xs">Admin Access • <span className="text-emerald-400">v1.2</span></p>
             </div>
           </div>
