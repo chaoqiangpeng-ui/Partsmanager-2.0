@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { PartDefinition } from '../../types';
+import { Trash2 } from 'lucide-react';
 
 interface PartDefinitionFormProps {
   initialData?: PartDefinition;
   onSubmit: (def: Omit<PartDefinition, 'id'> | PartDefinition) => void;
   onCancel: () => void;
+  onDelete?: (id: string) => void;
 }
 
-export const PartDefinitionForm: React.FC<PartDefinitionFormProps> = ({ initialData, onSubmit, onCancel }) => {
+export const PartDefinitionForm: React.FC<PartDefinitionFormProps> = ({ initialData, onSubmit, onCancel, onDelete }) => {
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -94,20 +96,34 @@ export const PartDefinitionForm: React.FC<PartDefinitionFormProps> = ({ initialD
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-        >
-          {initialData ? 'Update Part' : 'Create Part Type'}
-        </button>
+      <div className="flex justify-between items-center pt-4 border-t border-slate-100 mt-6">
+        <div>
+            {initialData && onDelete && (
+                <button
+                    type="button"
+                    onClick={() => onDelete(initialData.id)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-rose-600 bg-rose-50 rounded-lg hover:bg-rose-100 transition-colors"
+                >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Type
+                </button>
+            )}
+        </div>
+        <div className="flex gap-3">
+            <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200"
+            >
+            Cancel
+            </button>
+            <button
+            type="submit"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+            >
+            {initialData ? 'Update Part' : 'Create Part Type'}
+            </button>
+        </div>
       </div>
     </form>
   );

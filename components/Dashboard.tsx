@@ -1,7 +1,10 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { PopulatedPart, PartStatus, Machine } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { AlertCircle, CheckCircle2, Activity, Zap, RefreshCw, Download, Upload } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Activity, Zap, RefreshCw, Download, Upload, CalendarClock } from 'lucide-react';
+import { ProgressBar } from './ui/ProgressBar';
+import { Modal } from './ui/Modal';
+import { ReplacePartForm } from './forms/ReplacePartForm';
 
 interface DashboardProps {
   parts: PopulatedPart[];
@@ -10,6 +13,7 @@ interface DashboardProps {
   isGeneratingReport: boolean;
   onExport: () => void;
   onImport: (file: File) => void;
+  onReplacePart: (partId: string, newPartNumber: string, replaceDate?: string) => void;
 }
 
 const COLORS = {
@@ -24,15 +28,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onGenerateReport, 
   isGeneratingReport,
   onExport,
-  onImport
+  onImport,
+  onReplacePart
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Replace Modal State
+  const [replaceModalOpen, setReplaceModalOpen] = useState(false);
+  const [partToReplace, setPartToReplace] = useState<PopulatedPart | null>(null);
 
   const stats = useMemo(() => {
     const critical = parts.filter(p => p.status === PartStatus.CRITICAL).length;
     const warning = parts.filter(p => p.status === PartStatus.WARNING).length;
     const good = parts.filter(p => p.status === PartStatus.GOOD).length;
     return { critical, warning, good, total: parts.length };
+  }, [parts]);
+
+  // Get top 5 parts needing replacement (lowest health)
+  const expiringParts = useMemo(() => {
+    return [...parts]
+      .sort((a, b) => a.healthPercentage - b.healthPercentage)
+      .slice(0, 5);
   }, [parts]);
 
   const pieData = [
@@ -57,10 +73,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (file) {
       onImport(file);
     }
-    // Reset value so same file can be selected again if needed
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const openReplaceModal = (part: PopulatedPart) => {
+    setPartToReplace(part);
+    setReplaceModalOpen(true);
+  };
+
+  const handleReplaceSubmit = (partId: string, newPartNumber: string, replaceDate?: string) => {
+    onReplacePart(partId, newPartNumber, replaceDate);
+    setReplaceModalOpen(false);
   };
 
   return (
@@ -142,6 +167,67 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
+      {/* Maintenance Forecast Row */}
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+            <CalendarClock className="w-5 h-5 text-indigo-600" />
+            <h3 className="font-semibold text-slate-700">Upcoming Replacements (Lowest Health)</h3>
+        </div>
+        <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-slate-500 font-semibold">
+                    <tr>
+                        <th className="px-4 py-3 rounded-l-lg">Part Name</th>
+                        <th className="px-4 py-3">Machine</th>
+                        <th className="px-4 py-3">Install Date</th>
+                        <th className="px-4 py-3">Lifetime Used</th>
+                        <th className="px-4 py-3">Health</th>
+                        <th className="px-4 py-3 rounded-r-lg text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {expiringParts.map(part => (
+                        <tr key={part.id} className="hover:bg-slate-50">
+                            <td className="px-4 py-3 font-medium text-slate-800">
+                                {part.definition.name}
+                                <span className="ml-2 text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{part.partNumber}</span>
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">{part.machineName}</td>
+                            <td className="px-4 py-3 text-slate-600">{new Date(part.installDate).toLocaleDateString()}</td>
+                            <td className="px-4 py-3 text-slate-600">
+                                {part.currentDaysUsed} / {part.definition.maxLifetimeDays} days
+                            </td>
+                            <td className="px-4 py-3 w-48">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-1">
+                                        <ProgressBar percentage={100 - part.healthPercentage} status={part.status} />
+                                    </div>
+                                    <span className={`text-xs font-bold ${part.status === PartStatus.CRITICAL ? 'text-rose-600' : part.status === PartStatus.WARNING ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                        {part.healthPercentage.toFixed(0)}%
+                                    </span>
+                                </div>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                                <button 
+                                    onClick={() => openReplaceModal(part)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 shadow-sm transition-colors"
+                                >
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                    Replace
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                     {expiringParts.length === 0 && (
+                        <tr>
+                            <td colSpan={6} className="px-4 py-6 text-center text-slate-400">System is healthy. No immediate replacements needed.</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+      </div>
+
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
@@ -185,6 +271,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Replace Confirmation Modal */}
+      <Modal
+        isOpen={replaceModalOpen}
+        onClose={() => setReplaceModalOpen(false)}
+        title="Replace Part"
+      >
+        {partToReplace && (
+          <ReplacePartForm
+            part={partToReplace}
+            onConfirm={handleReplaceSubmit}
+            onCancel={() => setReplaceModalOpen(false)}
+          />
+        )}
+      </Modal>
     </div>
   );
 };

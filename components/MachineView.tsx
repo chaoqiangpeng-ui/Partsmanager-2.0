@@ -7,7 +7,7 @@ import { MachineForm } from './forms/MachineForm';
 import { EditPartForm } from './forms/EditPartForm';
 import { ReplacePartForm } from './forms/ReplacePartForm';
 import { HistoryLog } from './HistoryLog';
-import { RefreshCw, AlertTriangle, CheckCircle, Smartphone, Plus, Settings2, Wrench, Pencil, History, CalendarClock } from 'lucide-react';
+import { RefreshCw, AlertTriangle, CheckCircle, Smartphone, Plus, Settings2, Wrench, Pencil, History, CalendarClock, Trash2 } from 'lucide-react';
 
 interface MachineViewProps {
   machines: Machine[];
@@ -18,7 +18,9 @@ interface MachineViewProps {
   onUpdatePart: (partId: string, updates: Partial<InstalledPart>) => void;
   onAddMachine: (machine: Omit<Machine, 'id'>) => void;
   onEditMachine: (machine: Machine) => void;
+  onDeleteMachine: (id: string) => void;
   onInstallPart: (machineId: string, definitionId: string, partNumber: string) => void;
+  onDeleteInstalledPart: (id: string) => void;
 }
 
 export const MachineView: React.FC<MachineViewProps> = ({ 
@@ -30,7 +32,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
   onUpdatePart,
   onAddMachine, 
   onEditMachine,
-  onInstallPart
+  onDeleteMachine,
+  onInstallPart,
+  onDeleteInstalledPart
 }) => {
   const [expandedMachineId, setExpandedMachineId] = useState<string | null>(null);
   const [isMachineModalOpen, setIsMachineModalOpen] = useState(false);
@@ -77,6 +81,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
     }
     setIsMachineModalOpen(false);
   };
+  
+  const handleMachineDelete = (id: string) => {
+    if(window.confirm("Are you sure you want to delete this machine? All installed parts will also be removed.")) {
+        onDeleteMachine(id);
+        setIsMachineModalOpen(false);
+        setExpandedMachineId(null);
+    }
+  }
 
   const openInstallModal = (machineId: string) => {
     setSelectedMachineForInstall(machineId);
@@ -112,6 +124,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
     onReplacePart(partId, newPartNumber, replaceDate);
     setReplaceModalOpen(false);
   };
+
+  const handleDeletePartClick = (part: PopulatedPart) => {
+    if(window.confirm(`Are you sure you want to uninstall/delete ${part.definition.name}?`)) {
+        onDeleteInstalledPart(part.id);
+    }
+  }
 
   const openHistoryModal = (machine: Machine) => {
     setSelectedMachineHistory(machine);
@@ -259,13 +277,22 @@ export const MachineView: React.FC<MachineViewProps> = ({
                               <StatusBadge status={part.status} />
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); openReplaceModal(part); }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-300 transition-colors shadow-sm"
-                              >
-                                <RefreshCw className="w-3.5 h-3.5" />
-                                Replace
-                              </button>
+                                <div className="flex items-center justify-end gap-2">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); openReplaceModal(part); }}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-300 transition-colors shadow-sm"
+                                    >
+                                        <RefreshCw className="w-3.5 h-3.5" />
+                                        Replace
+                                    </button>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleDeletePartClick(part); }}
+                                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                                        title="Uninstall / Delete"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </td>
                           </tr>
                         );
@@ -297,6 +324,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
           initialData={editingMachine}
           onSubmit={handleMachineSubmit}
           onCancel={() => setIsMachineModalOpen(false)}
+          onDelete={handleMachineDelete}
         />
       </Modal>
 

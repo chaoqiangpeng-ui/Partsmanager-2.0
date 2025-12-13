@@ -54,8 +54,7 @@ export const db = {
 
       // Check if DB is empty (First run)
       if (!machinesRes.data || machinesRes.data.length === 0) {
-        console.log("Database appears empty. Seeding initial data...");
-        await this.seedInitialData();
+        console.log("Database appears empty or connection failed. Using Mock Data.");
         // Return the mock data directly so UI updates immediately without re-fetch
         return {
           machines: MOCK_MACHINES,
@@ -74,13 +73,13 @@ export const db = {
       };
 
     } catch (error) {
-      console.error("Error loading data from Supabase:", error);
-      // Fallback to empty/mock in case of connection error to prevent white screen
+      console.warn("Error loading data from Supabase (Offline Mode Activated):", error);
+      // Fallback to MOCK DATA so the app is never blank
       return {
-        machines: [],
-        definitions: [],
-        parts: [],
-        logs: []
+        machines: MOCK_MACHINES,
+        definitions: MOCK_PART_DEFINITIONS,
+        parts: INITIAL_INSTALLED_PARTS,
+        logs: [] as MaintenanceLog[]
       };
     }
   },
@@ -99,9 +98,21 @@ export const db = {
    */
   async saveMachines(machines: Machine[]) {
     if (machines.length === 0) return;
-    const payload = mapKeysToSnake(machines);
-    const { error } = await supabase.from('machines').upsert(payload);
-    if (error) console.error('Error saving machines:', error);
+    try {
+        const payload = mapKeysToSnake(machines);
+        const { error } = await supabase.from('machines').upsert(payload);
+        if (error) throw error;
+    } catch (e) { console.warn("Offline mode: Cannot save machines to DB"); }
+  },
+
+  /**
+   * Delete Machine
+   */
+  async deleteMachine(id: string) {
+    try {
+        const { error } = await supabase.from('machines').delete().eq('id', id);
+        if (error) throw error;
+    } catch (e) { console.warn("Offline mode: Cannot delete machine from DB"); }
   },
 
   /**
@@ -109,9 +120,21 @@ export const db = {
    */
   async saveDefinitions(defs: PartDefinition[]) {
     if (defs.length === 0) return;
-    const payload = mapKeysToSnake(defs);
-    const { error } = await supabase.from('part_definitions').upsert(payload);
-    if (error) console.error('Error saving definitions:', error);
+    try {
+        const payload = mapKeysToSnake(defs);
+        const { error } = await supabase.from('part_definitions').upsert(payload);
+        if (error) throw error;
+    } catch (e) { console.warn("Offline mode: Cannot save definitions to DB"); }
+  },
+
+  /**
+   * Delete Part Definition
+   */
+  async deleteDefinition(id: string) {
+    try {
+        const { error } = await supabase.from('part_definitions').delete().eq('id', id);
+        if (error) throw error;
+    } catch (e) { console.warn("Offline mode: Cannot delete definition from DB"); }
   },
 
   /**
@@ -119,9 +142,21 @@ export const db = {
    */
   async saveParts(parts: InstalledPart[]) {
     if (parts.length === 0) return;
-    const payload = mapKeysToSnake(parts);
-    const { error } = await supabase.from('installed_parts').upsert(payload);
-    if (error) console.error('Error saving parts:', error);
+    try {
+        const payload = mapKeysToSnake(parts);
+        const { error } = await supabase.from('installed_parts').upsert(payload);
+        if (error) throw error;
+    } catch (e) { console.warn("Offline mode: Cannot save parts to DB"); }
+  },
+
+  /**
+   * Delete Installed Part
+   */
+  async deletePart(id: string) {
+    try {
+        const { error } = await supabase.from('installed_parts').delete().eq('id', id);
+        if (error) throw error;
+    } catch (e) { console.warn("Offline mode: Cannot delete part from DB"); }
   },
 
   /**
@@ -129,9 +164,10 @@ export const db = {
    */
   async saveLogs(logs: MaintenanceLog[]) {
     if (logs.length === 0) return;
-    const payload = mapKeysToSnake(logs);
-    // Using upsert for logs ensures we don't create duplicates if ID exists
-    const { error } = await supabase.from('maintenance_logs').upsert(payload);
-    if (error) console.error('Error saving logs:', error);
+    try {
+        const payload = mapKeysToSnake(logs);
+        const { error } = await supabase.from('maintenance_logs').upsert(payload);
+        if (error) throw error;
+    } catch (e) { console.warn("Offline mode: Cannot save logs to DB"); }
   }
 };

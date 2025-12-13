@@ -14,7 +14,7 @@ const PROSE_STYLES = "prose prose-sm prose-slate max-w-none prose-h3:text-lg pro
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'machines' | 'parts'>('dashboard');
   
-  // App State - No longer using useStickyState, just standard React state
+  // App State
   const [loading, setLoading] = useState(true);
   const [machines, setMachines] = useState<Machine[]>([]);
   const [partDefinitions, setPartDefinitions] = useState<PartDefinition[]>([]);
@@ -37,7 +37,7 @@ const App: React.FC = () => {
         setMaintenanceLogs(data.logs);
       } catch (error) {
         console.error("Failed to load data", error);
-        alert("Failed to load system data.");
+        alert("Failed to load system data. Running in offline mode.");
       } finally {
         setLoading(false);
       }
@@ -65,6 +65,47 @@ const App: React.FC = () => {
     setMaintenanceLogs(newLogs);
     db.saveLogs(newLogs);
   };
+
+  // --- DELETE HANDLERS ---
+  
+  const handleDeleteMachine = async (id: string) => {
+    // 1. Remove parts installed on this machine
+    const partsToRemove = installedParts.filter(p => p.machineId === id);
+    const partsToKeep = installedParts.filter(p => p.machineId !== id);
+    
+    // 2. Remove machine
+    const machinesToKeep = machines.filter(m => m.id !== id);
+
+    // Update State
+    setInstalledParts(partsToKeep);
+    setMachines(machinesToKeep);
+
+    // Update DB
+    await db.deleteMachine(id);
+    for (const part of partsToRemove) {
+      await db.deletePart(part.id);
+    }
+  };
+
+  const handleDeleteDefinition = async (id: string) => {
+    // Check if used
+    const isUsed = installedParts.some(p => p.definitionId === id);
+    if (isUsed) {
+      alert("Cannot delete this part type because there are installed parts of this type. Please uninstall them first.");
+      return;
+    }
+
+    const defsToKeep = partDefinitions.filter(d => d.id !== id);
+    setPartDefinitions(defsToKeep);
+    await db.deleteDefinition(id);
+  };
+
+  const handleDeleteInstalledPart = async (id: string) => {
+    const partsToKeep = installedParts.filter(p => p.id !== id);
+    setInstalledParts(partsToKeep);
+    await db.deletePart(id);
+  };
+
 
   // Derived state: Join Parts with Definitions and Machines, calculate health
   const populatedParts: PopulatedPart[] = useMemo(() => {
@@ -263,6 +304,7 @@ const App: React.FC = () => {
             isGeneratingReport={isGeneratingReport}
             onExport={handleExportData}
             onImport={handleImportData}
+            onReplacePart={handleReplacePart}
           />
         )}
         {activeTab === 'machines' && (
@@ -275,7 +317,9 @@ const App: React.FC = () => {
             onUpdatePart={handleUpdatePart}
             onAddMachine={handleAddMachine}
             onEditMachine={handleEditMachine}
+            onDeleteMachine={handleDeleteMachine}
             onInstallPart={handleInstallPart}
+            onDeleteInstalledPart={handleDeleteInstalledPart}
           />
         )}
         {activeTab === 'parts' && (
@@ -286,6 +330,7 @@ const App: React.FC = () => {
             onUpdatePart={handleUpdatePart}
             onAddDefinition={handleAddPartDefinition}
             onEditDefinition={handleEditPartDefinition}
+            onDeleteDefinition={handleDeleteDefinition}
           />
         )}
       </Layout>

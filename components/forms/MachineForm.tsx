@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Machine } from '../../types';
+import { Trash2 } from 'lucide-react';
 
 interface MachineFormProps {
   initialData?: Machine;
   onSubmit: (machine: Omit<Machine, 'id'> | Machine) => void;
   onCancel: () => void;
+  onDelete?: (id: string) => void;
 }
 
-export const MachineForm: React.FC<MachineFormProps> = ({ initialData, onSubmit, onCancel }) => {
+export const MachineForm: React.FC<MachineFormProps> = ({ initialData, onSubmit, onCancel, onDelete }) => {
   const [formData, setFormData] = useState({
     name: '',
     model: '',
@@ -86,20 +88,34 @@ export const MachineForm: React.FC<MachineFormProps> = ({ initialData, onSubmit,
         </select>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-        >
-          {initialData ? 'Update Machine' : 'Add Machine'}
-        </button>
+      <div className="flex justify-between items-center pt-4 border-t border-slate-100 mt-6">
+        <div>
+            {initialData && onDelete && (
+                <button
+                    type="button"
+                    onClick={() => onDelete(initialData.id)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-rose-600 bg-rose-50 rounded-lg hover:bg-rose-100 transition-colors"
+                >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Machine
+                </button>
+            )}
+        </div>
+        <div className="flex gap-3">
+            <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+            >
+            Cancel
+            </button>
+            <button
+            type="submit"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm"
+            >
+            {initialData ? 'Update Machine' : 'Add Machine'}
+            </button>
+        </div>
       </div>
     </form>
   );

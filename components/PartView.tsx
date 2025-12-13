@@ -15,6 +15,7 @@ interface PartViewProps {
   onUpdatePart: (partId: string, updates: Partial<InstalledPart>) => void;
   onAddDefinition: (def: Omit<PartDefinition, 'id'>) => void;
   onEditDefinition: (def: PartDefinition) => void;
+  onDeleteDefinition: (id: string) => void;
 }
 
 export const PartView: React.FC<PartViewProps> = ({ 
@@ -23,7 +24,8 @@ export const PartView: React.FC<PartViewProps> = ({
   onReplacePart,
   onUpdatePart,
   onAddDefinition,
-  onEditDefinition 
+  onEditDefinition,
+  onDeleteDefinition
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDef, setEditingDef] = useState<PartDefinition | undefined>(undefined);
@@ -54,6 +56,13 @@ export const PartView: React.FC<PartViewProps> = ({
     }
     setIsModalOpen(false);
   };
+
+  const handleDelete = (id: string) => {
+      if(window.confirm("Are you sure you want to delete this part type?")) {
+        onDeleteDefinition(id);
+        setIsModalOpen(false);
+      }
+  }
 
   const openEditPartModal = (part: PopulatedPart) => {
     setPartToEdit(part);
@@ -185,6 +194,7 @@ export const PartView: React.FC<PartViewProps> = ({
           initialData={editingDef}
           onSubmit={handleSubmit}
           onCancel={() => setIsModalOpen(false)}
+          onDelete={handleDelete}
         />
       </Modal>
 
