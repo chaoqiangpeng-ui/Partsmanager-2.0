@@ -50,7 +50,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
             <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">OP</div>
             <div className="text-sm">
               <p className="font-medium text-slate-200">Operator</p>
-              <p className="text-slate-500 text-xs">Admin Access</p>
+              <p className="text-slate-500 text-xs">Admin Access • <span className="text-emerald-400">v1.2</span></p>
             </div>
           </div>
         </div>

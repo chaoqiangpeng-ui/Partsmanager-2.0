@@ -173,13 +173,22 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   <div>
                     <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
                       {machine.name}
-                      <button 
-                        onClick={(e) => handleEditClick(e, machine)}
-                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        title="Edit Machine Details"
-                      >
-                        <Settings2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-1 ml-2">
+                        <button 
+                            onClick={(e) => handleEditClick(e, machine)}
+                            className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Edit Machine Details"
+                        >
+                            <Settings2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleMachineDelete(machine.id); }}
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                            title="Delete Machine"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </h3>
                     <p className="text-sm text-slate-500">{machine.model} • {machine.location}</p>
                   </div>
