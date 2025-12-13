@@ -12,9 +12,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ percentage, status }) 
   if (status === PartStatus.CRITICAL) colorClass = 'bg-rose-500';
 
   return (
-    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/50">
       <div 
-        className={`h-2.5 rounded-full transition-all duration-500 ${colorClass}`} 
+        className={`h-full rounded-full transition-all duration-700 ease-out ${colorClass} shadow-sm`} 
         style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
       ></div>
     </div>
