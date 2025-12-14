@@ -57,6 +57,23 @@ Built with **React 19**, **TypeScript**, **Vite**, and **Tailwind CSS**.
    npm run dev
    ```
 
+## ☁️ Deployment (Vercel + Supabase)
+
+### 1. Database Setup (Supabase)
+1. Create a new project at [supabase.com](https://supabase.com).
+2. Go to the **SQL Editor** in Supabase.
+3. Copy the content from `deployment/supabase_schema.sql` in this repository.
+4. Run the SQL script to create tables and set permissions.
+5. Go to **Settings -> API** and copy the `URL` and `anon public` Key.
+
+### 2. Hosting Setup (Vercel)
+1. Import this repository into [Vercel](https://vercel.com).
+2. In the "Environment Variables" section, add:
+   - `VITE_SUPABASE_URL`: Your Supabase URL
+   - `VITE_SUPABASE_KEY`: Your Supabase Anon Key
+   - `API_KEY`: Your Gemini API Key
+3. Click **Deploy**.
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: React 19, TypeScript, Vite

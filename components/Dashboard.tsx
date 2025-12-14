@@ -326,10 +326,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <span className="w-1.5 h-5 bg-indigo-500 rounded-full"></span>
                     Issues by Category
                 </h3>
-                <div className="h-56 w-full">
+                <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={categoryData}>
-                        <XAxis dataKey="category" fontSize={11} tickLine={false} axisLine={false} tick={{fill: '#94a3b8'}} />
+                    <BarChart data={categoryData} margin={{ top: 0, right: 0, left: -20, bottom: 20 }}>
+                        <XAxis 
+                            dataKey="category" 
+                            fontSize={11} 
+                            tickLine={false} 
+                            axisLine={false} 
+                            tick={{fill: '#94a3b8', fontSize: 10}} 
+                            interval={0}
+                        />
                         <YAxis fontSize={11} tickLine={false} axisLine={false} tick={{fill: '#94a3b8'}} />
                         <Tooltip 
                             cursor={{fill: '#f8fafc', radius: 4}} 
