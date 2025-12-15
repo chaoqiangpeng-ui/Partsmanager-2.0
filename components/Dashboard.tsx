@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { PopulatedPart, PartStatus, Machine } from '../types';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { AlertCircle, CheckCircle2, Activity, Zap, RefreshCw, Download, Upload, CalendarClock, TrendingUp, AlertTriangle } from 'lucide-react';
 import { ProgressBar } from './ui/ProgressBar';
 import { Modal } from './ui/Modal';
@@ -48,7 +48,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const expiringParts = useMemo(() => {
     return [...parts]
       .sort((a, b) => a.healthPercentage - b.healthPercentage)
-      .slice(0, 5);
+      .slice(0, 10); // Increased slice since we have more room now
   }, [parts]);
 
   const pieData = [
@@ -89,7 +89,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-10">
+      {/* 1. Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">System Dashboard</h2>
@@ -137,7 +138,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* 2. KPI Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Machines */}
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group relative overflow-hidden">
@@ -218,137 +219,137 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Maintenance Forecast Table */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col overflow-hidden">
-            <div className="p-6 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <div className="p-2 bg-indigo-50 rounded-lg">
-                        <CalendarClock className="w-5 h-5 text-indigo-600" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-slate-800">Priority Replacements</h3>
-                        <p className="text-xs text-slate-500">Components with lowest health remaining</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div className="overflow-x-auto flex-1">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50/50 text-slate-500 font-semibold text-xs uppercase tracking-wider border-b border-slate-100">
-                        <tr>
-                            <th className="px-6 py-4">Component</th>
-                            <th className="px-6 py-4">Machine</th>
-                            <th className="px-6 py-4">Install Date</th>
-                            <th className="px-6 py-4">Health</th>
-                            <th className="px-6 py-4 text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                        {expiringParts.map(part => (
-                            <tr key={part.id} className="hover:bg-slate-50/80 transition-colors group">
-                                <td className="px-6 py-4">
-                                    <div className="font-semibold text-slate-700">{part.definition.name}</div>
-                                    <div className="text-xs font-mono text-slate-400 mt-0.5">{part.partNumber}</div>
-                                </td>
-                                <td className="px-6 py-4 text-slate-600">{part.machineName}</td>
-                                <td className="px-6 py-4 text-slate-600">{new Date(part.installDate).toLocaleDateString()}</td>
-                                <td className="px-6 py-4 w-48">
-                                    <div className="flex flex-col gap-1.5">
-                                        <div className="flex justify-between items-end">
-                                             <span className={`text-xs font-bold ${part.status === PartStatus.CRITICAL ? 'text-rose-600' : part.status === PartStatus.WARNING ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                            {part.healthPercentage.toFixed(0)}%
-                                            </span>
-                                            <span className="text-[10px] text-slate-400">{part.currentDaysUsed}d used</span>
-                                        </div>
-                                        <ProgressBar percentage={100 - part.healthPercentage} status={part.status} />
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                    <button 
-                                        onClick={() => openReplaceModal(part)}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
-                                    >
-                                        <RefreshCw className="w-3.5 h-3.5" />
-                                        Replace
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                        {expiringParts.length === 0 && (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400 flex flex-col items-center justify-center">
-                                    <CheckCircle2 className="w-8 h-8 text-emerald-100 mb-2" />
-                                    <p>All systems operational. No immediate actions required.</p>
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+      {/* 3. Charts Row - Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
+              <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                  <span className="w-1.5 h-5 bg-blue-500 rounded-full"></span>
+                  Issues by Category
+              </h3>
+              <div className="h-80 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={categoryData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis 
+                          dataKey="category" 
+                          fontSize={11} 
+                          tickLine={false} 
+                          axisLine={false} 
+                          tick={{fill: '#64748b', fontSize: 11, dy: 10}} 
+                          interval={0}
+                      />
+                      <YAxis fontSize={11} tickLine={false} axisLine={false} tick={{fill: '#64748b'}} />
+                      <Tooltip 
+                          cursor={{fill: '#f8fafc', radius: 4}} 
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      />
+                      <Legend verticalAlign="top" height={36} iconType="circle" />
+                      <Bar name="Critical" dataKey="critical" stackId="a" fill={COLORS[PartStatus.CRITICAL]} radius={[0, 0, 4, 4]} barSize={40} />
+                      <Bar name="Warning" dataKey="warning" stackId="a" fill={COLORS[PartStatus.WARNING]} radius={[4, 4, 0, 0]} barSize={40} />
+                  </BarChart>
+                  </ResponsiveContainer>
+              </div>
+          </div>
 
-        {/* Charts Column */}
-        <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                    <span className="w-1.5 h-5 bg-blue-500 rounded-full"></span>
-                    Fleet Health Distribution
-                </h3>
-                <div className="h-56 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                        stroke="none"
-                        >
-                        {pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                        </Pie>
-                        <Tooltip 
-                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
-                        />
-                        <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                    </PieChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
+              <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                  <span className="w-1.5 h-5 bg-indigo-500 rounded-full"></span>
+                  Fleet Health Distribution
+              </h3>
+              <div className="h-80 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                      <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={80}
+                      outerRadius={110}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                      >
+                      {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                      </Pie>
+                      <Tooltip 
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
+                      />
+                      <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" />
+                  </PieChart>
+                  </ResponsiveContainer>
+              </div>
+          </div>
+      </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                    <span className="w-1.5 h-5 bg-indigo-500 rounded-full"></span>
-                    Issues by Category
-                </h3>
-                <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={categoryData} margin={{ top: 0, right: 0, left: -20, bottom: 20 }}>
-                        <XAxis 
-                            dataKey="category" 
-                            fontSize={11} 
-                            tickLine={false} 
-                            axisLine={false} 
-                            tick={{fill: '#94a3b8', fontSize: 10}} 
-                            interval={0}
-                        />
-                        <YAxis fontSize={11} tickLine={false} axisLine={false} tick={{fill: '#94a3b8'}} />
-                        <Tooltip 
-                            cursor={{fill: '#f8fafc', radius: 4}} 
-                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                        />
-                        <Bar dataKey="critical" stackId="a" fill={COLORS[PartStatus.CRITICAL]} radius={[0, 0, 4, 4]} barSize={32} />
-                        <Bar dataKey="warning" stackId="a" fill={COLORS[PartStatus.WARNING]} radius={[4, 4, 0, 0]} barSize={32} />
-                    </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-        </div>
+      {/* 4. Priority Replacements Table Row - Full Width */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col overflow-hidden">
+          <div className="p-6 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                  <div className="p-2 bg-indigo-50 rounded-lg">
+                      <CalendarClock className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                      <h3 className="font-bold text-slate-800">Priority Replacements</h3>
+                      <p className="text-xs text-slate-500">Components with lowest health remaining</p>
+                  </div>
+              </div>
+          </div>
+          
+          <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50/50 text-slate-500 font-semibold text-xs uppercase tracking-wider border-b border-slate-100">
+                      <tr>
+                          <th className="px-6 py-4">Component</th>
+                          <th className="px-6 py-4">Machine</th>
+                          <th className="px-6 py-4">Install Date</th>
+                          <th className="px-6 py-4">Health</th>
+                          <th className="px-6 py-4 text-right">Action</th>
+                      </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                      {expiringParts.map(part => (
+                          <tr key={part.id} className="hover:bg-slate-50/80 transition-colors group">
+                              <td className="px-6 py-4">
+                                  <div className="font-semibold text-slate-700">{part.definition.name}</div>
+                                  <div className="text-xs font-mono text-slate-400 mt-0.5">{part.partNumber}</div>
+                              </td>
+                              <td className="px-6 py-4 text-slate-600">{part.machineName}</td>
+                              <td className="px-6 py-4 text-slate-600">{new Date(part.installDate).toLocaleDateString()}</td>
+                              <td className="px-6 py-4 w-64">
+                                  <div className="flex flex-col gap-1.5">
+                                      <div className="flex justify-between items-end">
+                                            <span className={`text-xs font-bold ${part.status === PartStatus.CRITICAL ? 'text-rose-600' : part.status === PartStatus.WARNING ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                          {part.healthPercentage.toFixed(0)}%
+                                          </span>
+                                          <span className="text-[10px] text-slate-400">{part.currentDaysUsed}d used</span>
+                                      </div>
+                                      <ProgressBar percentage={100 - part.healthPercentage} status={part.status} />
+                                  </div>
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                  <button 
+                                      onClick={() => openReplaceModal(part)}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
+                                  >
+                                      <RefreshCw className="w-3.5 h-3.5" />
+                                      Replace
+                                  </button>
+                              </td>
+                          </tr>
+                      ))}
+                      {expiringParts.length === 0 && (
+                          <tr>
+                              <td colSpan={5} className="px-6 py-12 text-center text-slate-400 flex flex-col items-center justify-center">
+                                  <CheckCircle2 className="w-8 h-8 text-emerald-100 mb-2" />
+                                  <p>All systems operational. No immediate actions required.</p>
+                              </td>
+                          </tr>
+                      )}
+                  </tbody>
+              </table>
+          </div>
       </div>
 
       {/* Replace Confirmation Modal */}
