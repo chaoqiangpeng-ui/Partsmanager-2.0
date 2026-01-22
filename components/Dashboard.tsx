@@ -44,11 +44,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return { critical, warning, good, total: parts.length };
   }, [parts]);
 
-  // Get top 5 parts needing replacement (lowest health)
+  // Get top 10 parts needing replacement (lowest health)
   const expiringParts = useMemo(() => {
     return [...parts]
       .sort((a, b) => a.healthPercentage - b.healthPercentage)
-      .slice(0, 10); // Increased slice since we have more room now
+      .slice(0, 10);
   }, [parts]);
 
   const pieData = [
@@ -57,15 +57,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
     { name: 'Critical', value: stats.critical, color: COLORS[PartStatus.CRITICAL] },
   ];
 
-  const categoryData = useMemo(() => {
-    const data: Record<string, { category: string; critical: number; warning: number }> = {};
+  // Calculate Average Health per Category
+  const categoryHealthData = useMemo(() => {
+    const data: Record<string, { category: string; totalHealth: number; count: number }> = {};
     parts.forEach(p => {
       const cat = p.definition.category;
-      if (!data[cat]) data[cat] = { category: cat, critical: 0, warning: 0 };
-      if (p.status === PartStatus.CRITICAL) data[cat].critical++;
-      if (p.status === PartStatus.WARNING) data[cat].warning++;
+      if (!data[cat]) data[cat] = { category: cat, totalHealth: 0, count: 0 };
+      data[cat].totalHealth += p.healthPercentage;
+      data[cat].count++;
     });
-    return Object.values(data);
+    return Object.values(data).map(item => ({
+      category: item.category,
+      avgHealth: Math.round(item.totalHealth / item.count)
+    }));
   }, [parts]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,11 +228,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
               <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
                   <span className="w-1.5 h-5 bg-blue-500 rounded-full"></span>
-                  Issues by Category
+                  Parts Health by Category (%)
               </h3>
               <div className="h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={categoryData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+                  <BarChart data={categoryHealthData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                       <XAxis 
                           dataKey="category" 
@@ -238,14 +242,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           tick={{fill: '#64748b', fontSize: 11, dy: 10}} 
                           interval={0}
                       />
-                      <YAxis fontSize={11} tickLine={false} axisLine={false} tick={{fill: '#64748b'}} />
+                      <YAxis 
+                          fontSize={11} 
+                          tickLine={false} 
+                          axisLine={false} 
+                          tick={{fill: '#64748b'}} 
+                          domain={[0, 100]}
+                          unit="%"
+                      />
                       <Tooltip 
                           cursor={{fill: '#f8fafc', radius: 4}} 
                           contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                          formatter={(value) => [`${value}%`, 'Avg Health']}
                       />
-                      <Legend verticalAlign="top" height={36} iconType="circle" />
-                      <Bar name="Critical" dataKey="critical" stackId="a" fill={COLORS[PartStatus.CRITICAL]} radius={[0, 0, 4, 4]} barSize={40} />
-                      <Bar name="Warning" dataKey="warning" stackId="a" fill={COLORS[PartStatus.WARNING]} radius={[4, 4, 0, 0]} barSize={40} />
+                      <Bar 
+                        name="Avg Health" 
+                        dataKey="avgHealth" 
+                        fill="#3b82f6" 
+                        radius={[4, 4, 0, 0]} 
+                        barSize={40} 
+                      />
                   </BarChart>
                   </ResponsiveContainer>
               </div>

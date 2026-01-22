@@ -13,9 +13,11 @@ export default defineConfig(({ mode }) => {
       port: 5173
     },
     define: {
-      // Polyfill process.env.API_KEY so the SDK code works without modification
+      // Polyfill process.env keys so the code works consistently across environments
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
-      // Prevent other process.env access from crashing
+      'process.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
+      'process.env.VITE_SUPABASE_KEY': JSON.stringify(env.VITE_SUPABASE_KEY),
+      // Provide a fallback for process.env
       'process.env': {}
     }
   }
