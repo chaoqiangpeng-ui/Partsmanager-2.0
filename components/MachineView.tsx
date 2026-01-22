@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Machine, PopulatedPart, PartStatus, PartDefinition, InstalledPart, MaintenanceLog } from '../types';
 import { StatusBadge } from './ui/Badge';
 import { ProgressBar } from './ui/ProgressBar';
@@ -7,7 +7,7 @@ import { MachineForm } from './forms/MachineForm';
 import { EditPartForm } from './forms/EditPartForm';
 import { ReplacePartForm } from './forms/ReplacePartForm';
 import { HistoryLog } from './HistoryLog';
-import { RefreshCw, AlertTriangle, Smartphone, Plus, Settings2, Wrench, Pencil, History, CalendarClock, Trash2, MapPin, Box, Download, Upload } from 'lucide-react';
+import { RefreshCw, AlertTriangle, CheckCircle, Smartphone, Plus, Settings2, Wrench, Pencil, History, CalendarClock, Trash2, MapPin, Box } from 'lucide-react';
 
 interface MachineViewProps {
   machines: Machine[];
@@ -21,7 +21,6 @@ interface MachineViewProps {
   onDeleteMachine: (id: string) => void;
   onInstallPart: (machineId: string, definitionId: string, partNumber: string) => void;
   onDeleteInstalledPart: (id: string) => void;
-  onBatchImport: (csvText: string) => void;
 }
 
 export const MachineView: React.FC<MachineViewProps> = ({ 
@@ -35,13 +34,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
   onEditMachine,
   onDeleteMachine,
   onInstallPart,
-  onDeleteInstalledPart,
-  onBatchImport
+  onDeleteInstalledPart
 }) => {
   const [expandedMachineId, setExpandedMachineId] = useState<string | null>(null);
   const [isMachineModalOpen, setIsMachineModalOpen] = useState(false);
   const [editingMachine, setEditingMachine] = useState<Machine | undefined>(undefined);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Install Part State
   const [installModalOpen, setInstallModalOpen] = useState(false);
@@ -139,84 +136,6 @@ export const MachineView: React.FC<MachineViewProps> = ({
     setHistoryModalOpen(true);
   }
 
-  // --- Export to CSV Function ---
-  const handleExportToExcel = () => {
-    // 1. Define Headers
-    const headers = [
-      'Machine Name',
-      'Machine ID',
-      'Part Name',
-      'Part Category',
-      'Serial Number',
-      'Install Date',
-      'Lifetime (Days)',
-      'Days Used',
-      'Health (%)',
-      'Plan Replacement Date'
-    ];
-
-    // 2. Build Rows
-    const csvRows = [headers.join(',')];
-
-    parts.forEach(part => {
-      // Calculate Plan Replacement Date
-      const installTime = new Date(part.installDate).getTime();
-      const lifeTimeMs = part.definition.maxLifetimeDays * 24 * 60 * 60 * 1000;
-      const planDate = new Date(installTime + lifeTimeMs);
-      
-      // Format dates to YYYY-MM-DD for better Excel compatibility
-      const installDateStr = new Date(part.installDate).toISOString().split('T')[0];
-      const planDateStr = planDate.toISOString().split('T')[0];
-
-      // Escape quotes for CSV format
-      const escape = (val: string | number) => `"${String(val).replace(/"/g, '""')}"`;
-
-      const row = [
-        escape(part.machineName),
-        escape(part.machineId),
-        escape(part.definition.name),
-        escape(part.definition.category),
-        escape(part.partNumber),
-        escape(installDateStr),
-        escape(part.definition.maxLifetimeDays),
-        escape(part.currentDaysUsed),
-        escape(part.healthPercentage.toFixed(1)),
-        escape(planDateStr)
-      ];
-      csvRows.push(row.join(','));
-    });
-
-    // 3. Create Blob and Download
-    // Add BOM (\uFEFF) so Excel opens UTF-8 correctly
-    const csvString = csvRows.join('\n');
-    const blob = new Blob(["\uFEFF" + csvString], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Parts_Plan_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // --- Import CSV Function ---
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result;
-      if (typeof text === 'string') {
-        onBatchImport(text);
-      }
-    };
-    reader.readAsText(file);
-    
-    // Reset input
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -227,38 +146,13 @@ export const MachineView: React.FC<MachineViewProps> = ({
             </h2>
             <p className="text-slate-500 text-sm mt-1">Manage equipment and installed components</p>
         </div>
-        <div className="flex gap-2">
-            <input 
-              type="file" 
-              ref={fileInputRef}
-              accept=".csv"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all text-sm font-medium shadow-sm"
-                title="Upload filled CSV template to batch add parts"
-            >
-                <Upload className="w-4 h-4" />
-                Import CSV
-            </button>
-            <button 
-            onClick={handleExportToExcel}
-            className="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all text-sm font-medium shadow-sm"
-            title="Download Parts List as CSV"
-            >
-            <Download className="w-4 h-4" />
-            Export Excel
-            </button>
-            <button 
-            onClick={handleAddClick}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 text-sm font-medium"
-            >
-            <Plus className="w-4 h-4" />
-            Add Machine
-            </button>
-        </div>
+        <button 
+          onClick={handleAddClick}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 text-sm font-medium"
+        >
+          <Plus className="w-4 h-4" />
+          Add Machine
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
