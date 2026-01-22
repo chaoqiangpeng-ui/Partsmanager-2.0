@@ -6,7 +6,7 @@ import { PartView } from './components/PartView';
 import { Modal } from './components/ui/Modal';
 import { Machine, InstalledPart, PopulatedPart, PartStatus, PartDefinition, MaintenanceLog } from './types';
 import { analyzeMaintenanceData } from './services/geminiService';
-import { db } from './services/db'; // Import the new DB service
+import { db } from './services/db';
 import { Sparkles, Loader2 } from 'lucide-react';
 
 const PROSE_STYLES = "prose prose-sm prose-slate max-w-none prose-h3:text-lg prose-h3:font-bold prose-ul:list-disc prose-li:ml-4";
@@ -185,6 +185,119 @@ const App: React.FC = () => {
     reader.readAsText(file);
   };
 
+  // --- BATCH IMPORT FROM CSV ---
+  const handleBatchImport = async (csvText: string) => {
+    try {
+      // 1. Basic CSV Parsing (remove BOM, split lines)
+      const cleanText = csvText.replace(/^\uFEFF/, '');
+      const lines = cleanText.split(/\r?\n/).filter(line => line.trim() !== '');
+      
+      // Remove header (assuming index 0 is header: "Machine Name, Machine ID, Part Name...")
+      const rows = lines.slice(1);
+
+      if (rows.length === 0) {
+        alert("CSV file appears to be empty.");
+        return;
+      }
+
+      // Temporary arrays to hold new/existing items to batch update at the end
+      let currentMachines = [...machines];
+      let currentDefs = [...partDefinitions];
+      const newPartsToAdd: InstalledPart[] = [];
+      let addedMachinesCount = 0;
+      let addedDefsCount = 0;
+      let addedPartsCount = 0;
+
+      for (const row of rows) {
+        // Simple regex split that ignores commas inside quotes
+        const strip = (s: string) => s ? s.trim().replace(/^"|"$/g, '').replace(/""/g, '"') : '';
+
+        // Split by comma, but not commas inside quotes
+        const cols = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || row.split(','); 
+        const cells = row.split(',').map(c => strip(c));
+
+        // Mapping based on Export format:
+        // 0: Machine Name, 1: Machine ID, 2: Part Name, 3: Category, 4: Serial, 5: Install Date, 6: Lifetime
+        const machineName = cells[0];
+        const partName = cells[2];
+        const category = cells[3];
+        const serialNumber = cells[4];
+        const installDateRaw = cells[5];
+        const lifetime = parseInt(cells[6]) || 365;
+
+        if (!machineName || !partName || !serialNumber) continue; // Skip invalid rows
+
+        // A. Handle Machine
+        let machineId = currentMachines.find(m => m.name.toLowerCase() === machineName.toLowerCase())?.id;
+        if (!machineId) {
+          // Create new Machine
+          machineId = `m_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+          const newMachine: Machine = {
+            id: machineId,
+            name: machineName,
+            location: 'Imported', // Default
+            model: 'Unknown',     // Default
+            status: 'active'
+          };
+          currentMachines = [...currentMachines, newMachine];
+          addedMachinesCount++;
+        }
+
+        // B. Handle Part Definition
+        let defId = currentDefs.find(d => d.name.toLowerCase() === partName.toLowerCase())?.id;
+        if (!defId) {
+          // Create new Definition
+          defId = `p_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+          const newDef: PartDefinition = {
+            id: defId,
+            name: partName,
+            category: category || 'General',
+            maxLifetimeDays: lifetime,
+            cost: 0
+          };
+          currentDefs = [...currentDefs, newDef];
+          addedDefsCount++;
+        }
+
+        // C. Handle Installed Part
+        // Check if this serial number already exists to avoid duplicates
+        const exists = installedParts.some(p => p.partNumber === serialNumber) || newPartsToAdd.some(p => p.partNumber === serialNumber);
+        
+        if (!exists) {
+          // Calculate days used
+          let currentDays = 0;
+          try {
+             const installTime = new Date(installDateRaw).getTime();
+             const now = new Date().getTime();
+             currentDays = Math.max(0, Math.floor((now - installTime) / (1000 * 60 * 60 * 24)));
+          } catch(e) {}
+
+          const newPart: InstalledPart = {
+            id: `inst_${Date.now()}_${Math.floor(Math.random()*10000)}`,
+            machineId: machineId,
+            definitionId: defId,
+            partNumber: serialNumber,
+            installDate: new Date(installDateRaw).toISOString(),
+            currentDaysUsed: currentDays
+          };
+          newPartsToAdd.push(newPart);
+          addedPartsCount++;
+        }
+      }
+
+      // Batch Update State & DB
+      if (addedMachinesCount > 0) updateMachines(currentMachines);
+      if (addedDefsCount > 0) updateDefinitions(currentDefs);
+      if (addedPartsCount > 0) updateParts([...installedParts, ...newPartsToAdd]);
+
+      alert(`Batch Import Successful!\n\nNew Machines: ${addedMachinesCount}\nNew Part Types: ${addedDefsCount}\nParts Installed: ${addedPartsCount}`);
+
+    } catch (error) {
+      console.error("Batch import failed", error);
+      alert("Failed to process CSV file. Please ensure it matches the export template.");
+    }
+  };
+
   // Actions
   const handleReplacePart = (partId: string, newPartNumber: string, replaceDate?: string) => {
     const newInstallDate = replaceDate 
@@ -320,6 +433,7 @@ const App: React.FC = () => {
             onDeleteMachine={handleDeleteMachine}
             onInstallPart={handleInstallPart}
             onDeleteInstalledPart={handleDeleteInstalledPart}
+            onBatchImport={handleBatchImport}
           />
         )}
         {activeTab === 'parts' && (
